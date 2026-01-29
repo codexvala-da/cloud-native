@@ -10,6 +10,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,20 +24,71 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  findAll(): Promise<User[]> {
-    return this.usersService.findAll();
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: [UserResponseDto], description: 'List users' })
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.usersService.findAll();
+    return users.map((u) => this.mapToDto(u));
   }
 
   @Get('self')
   @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: UserResponseDto })
   getSelf(@Request() req): UserResponseDto {
-    const user = req.user;
+    return this.mapToDto(req.user);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOkResponse({ type: UserResponseDto })
+  async findOne(@Param('id') id: string): Promise<UserResponseDto | null> {
+    const user = await this.usersService.findOne(+id);
+    return user ? this.mapToDto(user) : null;
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiBody({ type: CreateUserDto })
+  @ApiCreatedResponse({ description: 'User created' })
+  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    const user = await this.usersService.create({
+      username: createUserDto.username,
+      password: createUserDto.password,
+      firstName: createUserDto.first_name,
+      lastName: createUserDto.last_name,
+    });
+    return this.mapToDto(user);
+  }
+
+  @Patch('self')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
+  async updateSelf(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    const user = await this.usersService.update(req.user.id, {
+      firstName: updateUserDto.first_name,
+      lastName: updateUserDto.last_name,
+      password: updateUserDto.password,
+    });
+    return this.mapToDto(user);
+  }
+
+  private mapToDto(user: User): UserResponseDto {
     return {
       id: user.id,
       username: user.username,
@@ -38,36 +96,6 @@ export class UsersController {
       last_name: user.lastName,
       account_created: user.createdAt,
       account_updated: user.updatedAt,
-    };
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<User | null> {
-    return this.usersService.findOne(+id);
-  }
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.usersService.create({
-      username: createUserDto.username,
-      password: createUserDto.password,
-      firstName: createUserDto.first_name,
-      lastName: createUserDto.last_name,
-    });
-  }
-
-  @Patch('self')
-  @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.OK)
-  updateSelf(
-    @Request() req,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return this.usersService.update(req.user.id, {
-      firstName: updateUserDto.first_name,
-      lastName: updateUserDto.last_name,
-      password: updateUserDto.password,
-    });
+    } as UserResponseDto;
   }
 }
