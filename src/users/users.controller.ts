@@ -25,11 +25,11 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('users')
-@Controller('users')
+@Controller('v1/user')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
+  @Get('getAll')
   @UseGuards(AuthGuard)
   @ApiBearerAuth('access-token')
   @ApiOkResponse({ type: [UserResponseDto], description: 'List users' })
@@ -72,7 +72,7 @@ export class UsersController {
     return this.mapToDto(user);
   }
 
-  @Patch('self')
+  @Patch()
   @UseGuards(AuthGuard)
   @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
