@@ -39,6 +39,32 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async update(
+    id: number,
+    updateData: {
+      firstName?: string;
+      lastName?: string;
+      password?: string;
+    },
+  ): Promise<User> {
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (updateData.firstName) {
+      user.firstName = updateData.firstName;
+    }
+    if (updateData.lastName) {
+      user.lastName = updateData.lastName;
+    }
+    if (updateData.password) {
+      user.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    return this.usersRepository.save(user);
+  }
+
   async remove(id: number): Promise<void> {
     await this.usersRepository.delete(id);
   }
