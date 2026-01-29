@@ -34,28 +34,4 @@ export class AppController {
       throw new ServiceUnavailableException();
     }
   }
-
-  @Post('healthz')
-  @HttpCode(HttpStatus.METHOD_NOT_ALLOWED)
-  healthzPost(): void {
-    throw new MethodNotAllowedException();
-  }
-
-  @Put('healthz')
-  @HttpCode(HttpStatus.METHOD_NOT_ALLOWED)
-  healthzPut(): void {
-    throw new MethodNotAllowedException();
-  }
-
-  @Delete('healthz')
-  @HttpCode(HttpStatus.METHOD_NOT_ALLOWED)
-  healthzDelete(): void {
-    throw new MethodNotAllowedException();
-  }
-
-  @Patch('healthz')
-  @HttpCode(HttpStatus.METHOD_NOT_ALLOWED)
-  healthzPatch(): void {
-    throw new MethodNotAllowedException();
-  }
 }
